@@ -3,9 +3,9 @@ import os
 import numpy as np
 from PIL import Image
 from sklearn.model_selection import train_test_split
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.svm import SVC
 from sklearn.metrics import accuracy_score
-import matplotlib.pyplot as plt
+import plotly.graph_objs as go
 
 image_directory = 'datasets/'
 
@@ -36,24 +36,27 @@ label = np.array(label)
 
 x_train, x_test, y_train, y_test = train_test_split(dataset, label, test_size=0.2, random_state=0)
 
-model = RandomForestClassifier(n_estimators=100, random_state=0)
-model.fit(x_train, y_train)
+accuracies = []
 
-# Predictions
-y_pred = model.predict(x_test)
-accuracy = accuracy_score(y_test, y_pred)
+# Train SVC with different kernel types
+for kernel_type in ['linear', 'poly', 'rbf', 'sigmoid']:
+    model = SVC(kernel=kernel_type)
+    model.fit(x_train, y_train)
+    y_pred = model.predict(x_test)
+    accuracy = accuracy_score(y_test, y_pred)
+    accuracies.append(accuracy)
 
 # Plotting the validation accuracy
-plt.plot(range(1, len(model.estimators_) + 1), [estimator.score(x_test, y_test) for estimator in model.estimators_], label='Validation Accuracy')
-plt.xlabel('Number of Trees')
-plt.ylabel('Accuracy')
-plt.title('Accuracy of Random Forest with 100 Trees')
+fig = go.Figure()
+fig.add_trace(go.Bar(x=['Linear', 'Polynomial', 'RBF', 'Sigmoid'], y=accuracies, name='Validation Accuracy'))
 
 # Highlighting the highest accuracy point
-max_val_accuracy = max([estimator.score(x_test, y_test) for estimator in model.estimators_])
-max_val_accuracy_tree = [i for i, v in enumerate([estimator.score(x_test, y_test) for estimator in model.estimators_], start=1) if v == max_val_accuracy][0]
-plt.scatter(max_val_accuracy_tree, max_val_accuracy, color='red', marker='o', label=f'Highest Accuracy: {max_val_accuracy:.4f}')
-plt.annotate(f'Highest Accuracy: {max_val_accuracy:.4f}', (max_val_accuracy_tree, max_val_accuracy), textcoords="offset points", xytext=(0,10), ha='center')
+max_val_accuracy = max(accuracies)
+max_val_accuracy_kernel = ['Linear', 'Polynomial', 'RBF', 'Sigmoid'][accuracies.index(max_val_accuracy)]
+fig.add_trace(go.Scatter(x=[max_val_accuracy_kernel], y=[max_val_accuracy], mode='markers', name=f'Highest Accuracy: {max_val_accuracy:.4f}', marker=dict(color='red', size=10)))
 
-plt.legend()
-plt.show()
+fig.update_layout(title='Validation Accuracy of SVC with Different Kernel Types',
+                  xaxis_title='Kernel Type',
+                  yaxis_title='Validation Accuracy')
+
+fig.show()

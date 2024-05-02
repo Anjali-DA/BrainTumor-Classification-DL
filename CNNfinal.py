@@ -1,4 +1,3 @@
-#new code for CNN correction 2
 import cv2
 import os
 import numpy as np
@@ -7,7 +6,7 @@ from sklearn.model_selection import train_test_split
 from keras.utils import normalize, to_categorical
 from keras.models import Sequential
 from keras.layers import Conv2D, MaxPooling2D, Flatten, Dense, Activation, Dropout
-import matplotlib.pyplot as plt
+import plotly.graph_objs as go
 
 image_directory = 'datasets/'
 
@@ -69,17 +68,20 @@ model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accur
 
 history = model.fit(x_train, y_train, batch_size=16, verbose=1, epochs=100, validation_data=(x_test, y_test), shuffle=False)
 
+# Extracting validation accuracy over epochs
+val_accuracy = history.history['val_accuracy']
+
 # Plotting the validation accuracy
-plt.plot(history.history['val_accuracy'], label='Validation Accuracy')
-plt.xlabel('Epochs')
-plt.ylabel('Accuracy')
-plt.title('Accuracy of CNN model')
-plt.legend()
+fig = go.Figure()
+fig.add_trace(go.Scatter(x=list(range(1, len(val_accuracy) + 1)), y=val_accuracy, mode='lines', name='Validation Accuracy'))
 
-# Highlighting the highest validation accuracy point
-max_val_accuracy = max(history.history['val_accuracy'])
-max_val_accuracy_epoch = history.history['val_accuracy'].index(max_val_accuracy) + 1
-plt.scatter(max_val_accuracy_epoch, max_val_accuracy, color='red', marker='o', label=f'Highest Accuracy: {max_val_accuracy:.4f}')
-plt.annotate(f'Highest Accuracy: {max_val_accuracy:.4f}', (max_val_accuracy_epoch, max_val_accuracy), textcoords="offset points", xytext=(0,10), ha='center')
+# Highlighting the highest accuracy point
+max_val_accuracy = max(val_accuracy)
+max_val_accuracy_epoch = val_accuracy.index(max_val_accuracy) + 1
+fig.add_trace(go.Scatter(x=[max_val_accuracy_epoch], y=[max_val_accuracy], mode='markers', name=f'Highest Accuracy: {max_val_accuracy:.4f}', marker=dict(color='red', size=10)))
 
-plt.show()
+fig.update_layout(title='Validation Accuracy of CNN over Epochs',
+                  xaxis_title='Epochs',
+                  yaxis_title='Validation Accuracy')
+
+fig.show()
